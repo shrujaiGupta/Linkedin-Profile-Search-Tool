@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>LinkedIn Profile Finder</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+</head>
+<body class="bg-gray-100 min-h-screen p-8">
+    <div class="max-w-2xl mx-auto">
+        <div class="bg-white rounded-lg shadow-lg p-6">
+            <h1 class="text-2xl font-bold mb-6 text-center text-gray-800">LinkedIn Profile Finder</h1>
+            
+            <form id="searchForm" class="space-y-4">
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Company Name</label>
+                    <input type="text" id="companyInput" class="w-full p-2 border rounded-md" placeholder="Enter company name" required>
+                </div>
+                
+                <div class="space-y-2">
+                    <label class="block text-sm font-medium text-gray-700">Designations</label>
+                    <div class="flex space-x-2">
+                        <input type="text" id="designationInput" class="flex-1 p-2 border rounded-md" placeholder="Enter designation">
+                        <button type="button" id="addDesignation" class="bg-green-500 text-white px-4 py-2 rounded-md hover:bg-green-600 transition-colors">
+                            Add
+                        </button>
+                    </div>
+                    <div id="designationsList" class="mt-4 space-y-2">
+                        <!-- Designations will be added here -->
+                    </div>
+                    <p class="text-sm text-gray-500 mt-2" id="noDesignations">No designations added yet</p>
+                </div>
+
+                <button type="submit" class="w-full bg-blue-500 text-white py-2 px-4 rounded-md hover:bg-blue-600 transition-colors">
+                    Search Profiles
+                </button>
+            </form>
+
+            <div id="results" class="mt-8">
+                <!-- Results will be displayed here -->
+            </div>
+        </div>
+    </div>
+    <script src="script.js"></script>
+</body>
+</html> 

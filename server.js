@@ -22,7 +22,7 @@ app.use(express.json());
 app.use(express.static('.'));
 
 // Function to search LinkedIn profiles
-async function searchProfiles(designation, company) {
+async function searchProfiles(designation, company, resultCount) {
     try {
         if (!SERP_API_KEY) {
             throw new Error('SERP_API_KEY is not configured');
@@ -34,7 +34,7 @@ async function searchProfiles(designation, company) {
                 api_key: SERP_API_KEY,
                 engine: 'google',
                 q: query,
-                num: 10
+                num: Math.min(100, Math.max(1, resultCount)) // Ensure count is between 1 and 100
             }
         });
 
@@ -42,6 +42,7 @@ async function searchProfiles(designation, company) {
             ? response.data.organic_results
                 .filter(result => result.link.includes('linkedin.com/in'))
                 .map(result => result.link)
+                .slice(0, resultCount) // Limit to requested number of results
             : [];
 
         return profiles;
@@ -53,17 +54,23 @@ async function searchProfiles(designation, company) {
 
 app.post('/search', async (req, res) => {
     try {
-        const { company, designations } = req.body;
+        const { company, designations, resultCount = 10 } = req.body;
+
+        // Validate resultCount
+        const validatedResultCount = Math.min(100, Math.max(1, parseInt(resultCount) || 10));
 
         // Initialize results structure
         const results = {
             CompanyName: company,
-            Designations: {}
+            Designations: {},
+            SearchParameters: {
+                ResultsPerDesignation: validatedResultCount
+            }
         };
 
         // Search for each designation
         for (const designation of designations) {
-            const profiles = await searchProfiles(designation, company);
+            const profiles = await searchProfiles(designation, company, validatedResultCount);
             results.Designations[designation] = profiles;
         }
 

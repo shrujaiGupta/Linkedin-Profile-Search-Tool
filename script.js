@@ -1,5 +1,6 @@
-// Store designations
+// Store designations and search results
 let designations = new Set();
+let lastSearchResults = null;
 
 // Get DOM elements
 const designationInput = document.getElementById('designationInput');
@@ -8,6 +9,7 @@ const designationsList = document.getElementById('designationsList');
 const noDesignationsText = document.getElementById('noDesignations');
 const searchForm = document.getElementById('searchForm');
 const resultCountInput = document.getElementById('resultCount');
+const exportButtons = document.getElementById('exportButtons');
 
 // Validate result count input
 resultCountInput.addEventListener('change', () => {
@@ -101,6 +103,70 @@ designationInput.addEventListener('keypress', (e) => {
     }
 });
 
+// Function to prepare data for export
+function prepareExportData() {
+    if (!lastSearchResults) {
+        showNotification('No search results to export', 'error');
+        return null;
+    }
+
+    const data = [];
+    
+    // Add header row
+    data.push(['Company', 'Designation', 'LinkedIn Profile']);
+    
+    // Add data rows
+    Object.entries(lastSearchResults.Designations).forEach(([designation, profiles]) => {
+        profiles.forEach(profile => {
+            data.push([lastSearchResults.CompanyName, designation, profile]);
+        });
+    });
+
+    return data;
+}
+
+// Function to export to CSV
+function exportToCSV() {
+    const data = prepareExportData();
+    if (!data) return;
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    data.forEach(row => {
+        const csvRow = row.map(cell => {
+            // Escape quotes and wrap in quotes if contains comma or quotes
+            const escaped = cell.replace(/"/g, '""');
+            return /[,"]/.test(cell) ? `"${escaped}"` : cell;
+        }).join(',');
+        csvContent += csvRow + "\r\n";
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `linkedin_profiles_${lastSearchResults.CompanyName.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showNotification('CSV file exported successfully', 'success');
+}
+
+// Function to export to Excel
+function exportToExcel() {
+    const data = prepareExportData();
+    if (!data) return;
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "LinkedIn Profiles");
+
+    // Generate and download the Excel file
+    XLSX.writeFile(wb, `linkedin_profiles_${lastSearchResults.CompanyName.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    showNotification('Excel file exported successfully', 'success');
+}
+
 // Handle form submission
 searchForm.addEventListener('submit', async (e) => {
     e.preventDefault();
@@ -134,6 +200,9 @@ searchForm.addEventListener('submit', async (e) => {
         </div>
     `;
 
+    // Hide export buttons while searching
+    exportButtons.style.display = 'none';
+
     try {
         const response = await fetch('/search', {
             method: 'POST',
@@ -148,6 +217,7 @@ searchForm.addEventListener('submit', async (e) => {
         });
 
         const data = await response.json();
+        lastSearchResults = data; // Store the results for export
         
         // Display results
         let resultsHTML = `
@@ -190,6 +260,12 @@ searchForm.addEventListener('submit', async (e) => {
 
         resultsHTML += '</div>';
         resultsDiv.innerHTML = resultsHTML;
+
+        // Show export buttons if there are results
+        if (Object.values(data.Designations).some(profiles => profiles.length > 0)) {
+            exportButtons.style.display = 'flex';
+        }
+
         showNotification('Search completed successfully', 'success');
     } catch (error) {
         resultsDiv.innerHTML = `

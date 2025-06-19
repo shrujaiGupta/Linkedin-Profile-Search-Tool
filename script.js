@@ -548,20 +548,7 @@ function exportAllToCSV() {
     showNotification('All results exported to CSV successfully', 'success');
 }
 
-// Function to export all results to Excel (Global export)
-function exportAllToExcel() {
-    const data = prepareExportData();
-    if (!data) return;
 
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "LinkedIn Profiles - All Results");
-
-    // Generate and download the Excel file
-    XLSX.writeFile(wb, `linkedin_profiles_all_results_${new Date().toISOString().split('T')[0]}.xlsx`);
-    
-    showNotification('All results exported to Excel successfully', 'success');
-}
 
 // Function to export to CSV (Individual company - for hover buttons)
 function exportToCSV() {
@@ -590,20 +577,7 @@ function exportToCSV() {
     showNotification('CSV file exported successfully', 'success');
 }
 
-// Function to export to Excel (Individual company - for hover buttons)
-function exportToExcel() {
-    const data = prepareExportData();
-    if (!data) return;
 
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "LinkedIn Profiles");
-
-    // Generate and download the Excel file
-    XLSX.writeFile(wb, `linkedin_profiles_${new Date().toISOString().split('T')[0]}.xlsx`);
-    
-    showNotification('Excel file exported successfully', 'success');
-}
 
 // Make functions available globally
 window.toggleSuggestion = toggleSuggestion;
@@ -615,9 +589,7 @@ window.clearAllRecent = clearAllRecent;
 window.deleteRecentDesignation = deleteRecentDesignation;
 window.addDesignationFromRecent = addDesignationFromRecent;
 window.exportToCSV = exportToCSV;
-window.exportToExcel = exportToExcel;
 window.exportAllToCSV = exportAllToCSV;
-window.exportAllToExcel = exportAllToExcel;
 window.selectRecentCompany = selectRecentCompany;
 window.deleteRecentCompany = deleteRecentCompany;
 window.nextRecentCompanyPage = nextRecentCompanyPage;

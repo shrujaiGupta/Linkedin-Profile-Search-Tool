@@ -28,7 +28,7 @@ async function searchProfiles(designation, company, resultCount) {
             throw new Error('SERP_API_KEY is not configured');
         }
 
-        const query = `${designation} ${company} site:linkedin.com/in`;
+        const query = `${company} ${designation} site:linkedin.com/in`;
         const response = await axiosInstance.get('https://serpapi.com/search', {
             params: {
                 api_key: SERP_API_KEY,

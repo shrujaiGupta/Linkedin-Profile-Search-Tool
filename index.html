@@ -103,14 +103,25 @@
                 <form id="searchForm" class="space-y-6">
                     <!-- Company Input -->
                     <div class="space-y-2">
-                        <label class="block text-sm font-semibold text-gray-700">Company Name</label>
-                        <div class="relative">
+                        <label class="block text-sm font-semibold text-gray-700">Companies</label>
+                        <div class="flex space-x-2">
                             <input type="text" 
                                    id="companyInput" 
-                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm" 
-                                   placeholder="Enter company name" 
-                                   required>
+                                   class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm" 
+                                   placeholder="Enter company name">
+                            <button type="button" 
+                                    id="addCompany" 
+                                    class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 flex items-center space-x-2 shadow-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
+                                </svg>
+                                <span>Add</span>
+                            </button>
                         </div>
+                        <div id="companiesList" class="mt-4 space-y-2">
+                            <!-- Companies will be added here -->
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2 italic" id="noCompanies">No companies added yet</p>
                     </div>
 
                     <!-- Results Count Input -->

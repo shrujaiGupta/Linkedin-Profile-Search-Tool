@@ -821,13 +821,16 @@ searchForm.addEventListener('submit', async (e) => {
             document.getElementById('stickyExportBar').style.display = 'block';
             
             // Scroll to show the results after they're loaded
-            const firstResultCard = document.querySelector('.company-card');
-            if (firstResultCard) {
-                firstResultCard.scrollIntoView({ 
-                    behavior: 'smooth', 
-                    block: 'start'
-                });
-            }
+            // Add small delay to ensure DOM is updated
+            setTimeout(() => {
+                const firstResult = document.querySelector('.animate-fade-in');
+                if (firstResult) {
+                    firstResult.scrollIntoView({ 
+                        behavior: 'smooth', 
+                        block: 'start'
+                    });
+                }
+            }, 100);
         }
 
         const totalProcessed = successCount + failureCount;

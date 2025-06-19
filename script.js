@@ -819,6 +819,15 @@ searchForm.addEventListener('submit', async (e) => {
         if (lastSearchResults.Companies.some(company => 
             Object.values(company.Designations).some(profiles => profiles.length > 0))) {
             document.getElementById('stickyExportBar').style.display = 'block';
+            
+            // Scroll to show the results after they're loaded
+            const firstResultCard = document.querySelector('.company-card');
+            if (firstResultCard) {
+                firstResultCard.scrollIntoView({ 
+                    behavior: 'smooth', 
+                    block: 'start'
+                });
+            }
         }
 
         const totalProcessed = successCount + failureCount;

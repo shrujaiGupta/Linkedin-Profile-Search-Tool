@@ -649,31 +649,13 @@ function updateResults(results) {
         
         resultsHTML += `
             <div class="mb-8 ${backgroundClass} rounded-xl p-6 shadow-lg border backdrop-blur-sm">
-                <div class="flex items-center justify-between mb-6">
-                    <div class="flex items-center space-x-3">
-                        <div class="p-2 bg-white rounded-lg shadow-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4zm3 1h6v4H7V5zm6 6H7v2h6v-2z" clip-rule="evenodd" />
-                            </svg>
-                        </div>
-                        <h3 class="text-xl font-bold text-gray-800">${companyResult.CompanyName}</h3>
+                <div class="flex items-center space-x-3 mb-6">
+                    <div class="p-2 bg-white rounded-lg shadow-sm">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4zm3 1h6v4H7V5zm6 6H7v2h6v-2z" clip-rule="evenodd" />
+                        </svg>
                     </div>
-                    <div class="flex items-center space-x-2 opacity-0 transition-opacity duration-200 hover:opacity-100 export-buttons">
-                        <button onclick="exportToCSV()"
-                                class="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 flex items-center space-x-1 shadow-md">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                            <span>CSV</span>
-                        </button>
-                        <button onclick="exportToExcel()"
-                                class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center space-x-1 shadow-md">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                            <span>Excel</span>
-                        </button>
-                    </div>
+                    <h3 class="text-xl font-bold text-gray-800">${companyResult.CompanyName}</h3>
                 </div>
         `;
         
@@ -721,18 +703,6 @@ function updateResults(results) {
 
     resultsHTML += '</div>';
     resultsDiv.innerHTML = resultsHTML;
-
-    // Add CSS for export buttons hover effect
-    const style = document.createElement('style');
-    style.textContent = `
-        .export-buttons {
-            opacity: 0;
-        }
-        .mb-8:hover .export-buttons {
-            opacity: 1;
-        }
-    `;
-    document.head.appendChild(style);
 }
 
 // Function to create a delay
@@ -853,8 +823,7 @@ searchForm.addEventListener('submit', async (e) => {
         </div>
     `;
 
-    // Hide export buttons and sticky export bar while searching
-    exportButtons.style.display = 'none';
+    // Hide sticky export bar while searching
     document.getElementById('stickyExportBar').style.display = 'none';
 
     try {
@@ -921,11 +890,9 @@ searchForm.addEventListener('submit', async (e) => {
         
         updateResults(lastSearchResults);
 
-        // Show export buttons if there are results
+        // Show sticky export bar if there are results
         if (lastSearchResults.Companies.some(company => 
             Object.values(company.Designations).some(profiles => profiles.length > 0))) {
-            exportButtons.style.display = 'flex';
-            // Show sticky export bar
             document.getElementById('stickyExportBar').style.display = 'block';
         }
 

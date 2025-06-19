@@ -3,172 +3,21 @@ let designations = new Set();
 let companies = new Set();
 let lastSearchResults = null;
 
-// Popular designations list
-const popularDesignations = [
-    "CEO", "CTO", "CFO", "COO", "CMO",
-    "Software Engineer", "Senior Software Engineer", "Lead Software Engineer", "Principal Software Engineer", "Software Architect",
-    "Product Manager", "Senior Product Manager", "Product Owner", "Product Director", "VP of Product",
-    "Data Scientist", "Senior Data Scientist", "Lead Data Scientist", "Data Engineer", "Machine Learning Engineer",
-    "UX Designer", "UI Designer", "Product Designer", "Senior Designer", "Design Director",
-    "Marketing Manager", "Digital Marketing Manager", "Marketing Director", "Growth Manager", "Brand Manager",
-    "Sales Manager", "Account Executive", "Sales Director", "Business Development Manager", "Sales Representative",
-    "HR Manager", "HR Director", "Talent Acquisition Manager", "HR Business Partner", "Recruiting Manager",
-    "Operations Manager", "Operations Director", "Project Manager", "Program Manager", "Scrum Master",
-    "Financial Analyst", "Senior Financial Analyst", "Finance Manager", "Finance Director", "Controller",
-    "Business Analyst", "Senior Business Analyst", "Business Intelligence Analyst", "Data Analyst", "Research Analyst",
-    "DevOps Engineer", "Site Reliability Engineer", "Systems Engineer", "Cloud Engineer", "Infrastructure Engineer",
-    "Full Stack Developer", "Frontend Developer", "Backend Developer", "Mobile Developer", "iOS Developer",
-    "Android Developer", "React Developer", "Angular Developer", "Node.js Developer", "Python Developer",
-    "Quality Assurance Engineer", "QA Lead", "Test Engineer", "Automation Engineer", "Performance Engineer",
-    "Security Engineer", "Information Security Manager", "Security Analyst", "Cybersecurity Engineer", "Security Architect",
-    "Content Manager", "Content Strategist", "Content Writer", "Technical Writer", "Copywriter",
-    "Customer Success Manager", "Account Manager", "Client Services Manager", "Customer Support Manager", "Customer Experience Manager",
-    "Supply Chain Manager", "Procurement Manager", "Logistics Manager", "Inventory Manager", "Supply Chain Director",
-    "Legal Counsel", "Corporate Counsel", "Patent Attorney", "Compliance Officer", "Legal Director",
-    "Research Scientist", "Research Engineer", "R&D Manager", "Innovation Manager", "Research Director"
-];
+// Global variables
+let allProfiles = [];
+let currentPage = 1;
+const itemsPerPage = 9;
+let currentRecentPage = 1;
+let currentRecentCompanyPage = 1;
+const recentItemsPerPage = 9;
 
-// Recent designations management
-const RECENT_DESIGNATIONS_KEY = 'recentDesignations';
-const MAX_RECENT_DESIGNATIONS = 50;
-let recentDesignations = [];
+// Recent designations functionality
+let recentDesignations = JSON.parse(localStorage.getItem('recentDesignations')) || [];
 let filteredRecentDesignations = [];
-let recentPage = 0;
 
-// Load recent designations from localStorage
-function loadRecentDesignations() {
-    const stored = localStorage.getItem(RECENT_DESIGNATIONS_KEY);
-    if (stored) {
-        recentDesignations = JSON.parse(stored);
-        filteredRecentDesignations = [...recentDesignations];
-    }
-}
-
-// Save recent designations to localStorage
-function saveRecentDesignations() {
-    localStorage.setItem(RECENT_DESIGNATIONS_KEY, JSON.stringify(recentDesignations));
-}
-
-// Add designation to recent list
-function addToRecent(designation) {
-    // Remove if already exists
-    recentDesignations = recentDesignations.filter(d => d !== designation);
-    // Add to front of array
-    recentDesignations.unshift(designation);
-    // Keep only the most recent MAX_RECENT_DESIGNATIONS
-    if (recentDesignations.length > MAX_RECENT_DESIGNATIONS) {
-        recentDesignations = recentDesignations.slice(0, MAX_RECENT_DESIGNATIONS);
-    }
-    filteredRecentDesignations = [...recentDesignations];
-    saveRecentDesignations();
-    displayRecentDesignations();
-}
-
-// Filter recent designations
-function filterRecentDesignations(searchText) {
-    if (!searchText) {
-        filteredRecentDesignations = [...recentDesignations];
-    } else {
-        const searchLower = searchText.toLowerCase();
-        filteredRecentDesignations = recentDesignations.filter(designation => 
-            designation.toLowerCase().includes(searchLower)
-        );
-    }
-    recentPage = 0;
-    displayRecentDesignations();
-}
-
-// Display recent designations
-function displayRecentDesignations() {
-    const recentList = document.getElementById('recentDesignationsList');
-    const start = recentPage * itemsPerPage;
-    const end = start + itemsPerPage;
-    const pageItems = filteredRecentDesignations.slice(start, end);
-    
-    let html = '';
-    
-    if (filteredRecentDesignations.length === 0) {
-        html = `
-            <div class="text-center text-gray-500 py-4">
-                <p>No recent designations</p>
-            </div>
-        `;
-    } else {
-        pageItems.forEach(designation => {
-            const isSelected = designations.has(designation);
-            html += `
-                <div class="designation-suggestion p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-200 cursor-pointer ${isSelected ? 'border-2 border-blue-500' : ''}"
-                     onclick="toggleSuggestion('${designation.replace(/'/g, "\\'")}')">
-                    <div class="flex items-center justify-between">
-                        <span class="text-gray-700">${designation}</span>
-                        <div class="flex items-center space-x-2">
-                            ${isSelected ? `
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
-                                </svg>
-                            ` : ''}
-                            <button onclick="deleteRecentDesignation('${designation.replace(/'/g, "\\'")}', event)"
-                                    class="text-gray-400 hover:text-red-500 transition-colors duration-200 p-1 rounded-full hover:bg-gray-200">
-                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
-                                </svg>
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        });
-
-        // Add navigation controls
-        if (filteredRecentDesignations.length > itemsPerPage) {
-            html += `
-                <div class="flex justify-between items-center py-4">
-                    ${recentPage > 0 ? `
-                        <button onclick="previousRecentPage()" 
-                                class="text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-2">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform rotate-180" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                            <span>Previous</span>
-                        </button>
-                    ` : `<div></div>`}
-                    
-                    ${end < filteredRecentDesignations.length ? `
-                        <button onclick="nextRecentPage()" 
-                                class="text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-2">
-                            <span>Next</span>
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
-                            </svg>
-                        </button>
-                    ` : `<div></div>`}
-                </div>
-                <div class="text-center text-sm text-gray-500">
-                    Showing ${start + 1}-${end} of ${filteredRecentDesignations.length}
-                </div>
-            `;
-        }
-    }
-
-    recentList.innerHTML = html;
-}
-
-// Navigation functions for recent designations
-function nextRecentPage() {
-    if ((recentPage + 1) * itemsPerPage < filteredRecentDesignations.length) {
-        recentPage++;
-        displayRecentDesignations();
-        document.getElementById('recentDesignationsList').scrollTop = 0;
-    }
-}
-
-function previousRecentPage() {
-    if (recentPage > 0) {
-        recentPage--;
-        displayRecentDesignations();
-        document.getElementById('recentDesignationsList').scrollTop = 0;
-    }
-}
+// Recent companies management
+let recentCompanies = JSON.parse(localStorage.getItem('recentCompanies') || '[]');
+let filteredRecentCompanies = [...recentCompanies];
 
 // Get DOM elements
 const designationInput = document.getElementById('designationInput');
@@ -186,10 +35,174 @@ const suggestionSearch = document.getElementById('suggestionSearch');
 const suggestionsList = document.getElementById('suggestionsList');
 const recentSearch = document.getElementById('recentSearch');
 
+// Load recent designations from localStorage
+function loadRecentDesignations() {
+    recentDesignations = JSON.parse(localStorage.getItem('recentDesignations')) || [];
+    filteredRecentDesignations = [...recentDesignations];
+}
+
+// Add to recent designations
+function addToRecent(designation) {
+    // Remove if already exists
+    recentDesignations = recentDesignations.filter(d => d.toLowerCase() !== designation.toLowerCase());
+    
+    // Add to beginning
+    recentDesignations.unshift(designation);
+    
+    // Keep only last 50
+    if (recentDesignations.length > 50) {
+        recentDesignations = recentDesignations.slice(0, 50);
+    }
+    
+    localStorage.setItem('recentDesignations', JSON.stringify(recentDesignations));
+    
+    // Update filtered list based on current search
+    const searchTerm = document.getElementById('recentSearch').value.toLowerCase();
+    if (!searchTerm) {
+        filteredRecentDesignations = [...recentDesignations];
+    } else {
+        filteredRecentDesignations = recentDesignations.filter(d => 
+            d.toLowerCase().includes(searchTerm)
+        );
+    }
+    
+    displayRecentDesignations();
+}
+
+// Filter recent designations
+function filterRecentDesignations(searchTerm) {
+    if (!searchTerm) {
+        filteredRecentDesignations = [...recentDesignations];
+    } else {
+        filteredRecentDesignations = recentDesignations.filter(designation => 
+            designation.toLowerCase().includes(searchTerm.toLowerCase())
+        );
+    }
+    currentRecentPage = 1;
+    displayRecentDesignations();
+}
+
+// Display recent designations
+function displayRecentDesignations() {
+    const recentDesignationsList = document.getElementById('recentDesignationsList');
+    const startIndex = (currentRecentPage - 1) * recentItemsPerPage;
+    const endIndex = startIndex + recentItemsPerPage;
+    const currentItems = filteredRecentDesignations.slice(startIndex, endIndex);
+    
+    if (currentItems.length === 0) {
+        recentDesignationsList.innerHTML = `
+            <div class="text-center text-gray-500 py-4">
+                <p>${filteredRecentDesignations.length === 0 ? 'No recent designations' : 'No more items'}</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    currentItems.forEach(designation => {
+        html += `
+            <div class="flex items-center justify-between p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-200 designation-item">
+                <button onclick="addDesignationFromRecent('${designation}')" 
+                        class="flex-1 text-left text-gray-700 hover:text-blue-600 transition-colors">
+                    <div class="flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                        </svg>
+                        <span>${designation}</span>
+                    </div>
+                </button>
+                <button onclick="deleteRecentDesignation('${designation}')" 
+                        class="text-red-500 hover:text-red-700 focus:outline-none focus:ring-2 focus:ring-red-500 focus:ring-offset-2 rounded-full p-1 ml-2">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M9 2a1 1 0 00-.894.553L7.382 4H4a1 1 0 000 2v10a2 2 0 002 2h8a2 2 0 002-2V6a1 1 0 100-2h-3.382l-.724-1.447A1 1 0 0011 2H9zM7 8a1 1 0 012 0v6a1 1 0 11-2 0V8zm5-1a1 1 0 00-1 1v6a1 1 0 102 0V8a1 1 0 00-1-1z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+        `;
+    });
+    
+    // Add pagination for recent designations
+    const totalPages = Math.ceil(filteredRecentDesignations.length / recentItemsPerPage);
+    if (totalPages > 1) {
+        html += `
+            <div class="flex items-center justify-between mt-4 pt-4 border-t text-sm text-gray-600">
+                <button onclick="previousRecentPage()" 
+                        class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors ${currentRecentPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}">
+                    Previous
+                </button>
+                <span>Page ${currentRecentPage} of ${totalPages}</span>
+                <button onclick="nextRecentPage()" 
+                        class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors ${currentRecentPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}">
+                    Next
+                </button>
+            </div>
+        `;
+    }
+    
+    recentDesignationsList.innerHTML = html;
+}
+
+// Recent designations pagination
+function nextRecentPage() {
+    const totalPages = Math.ceil(filteredRecentDesignations.length / recentItemsPerPage);
+    if (currentRecentPage < totalPages) {
+        currentRecentPage++;
+        displayRecentDesignations();
+    }
+}
+
+function previousRecentPage() {
+    if (currentRecentPage > 1) {
+        currentRecentPage--;
+        displayRecentDesignations();
+    }
+}
+
+// Add designation from recent
+function addDesignationFromRecent(designation) {
+    addDesignation(designation);
+}
+
+// Delete recent designation
+function deleteRecentDesignation(designation) {
+    recentDesignations = recentDesignations.filter(d => d !== designation);
+    filteredRecentDesignations = filteredRecentDesignations.filter(d => d !== designation);
+    localStorage.setItem('recentDesignations', JSON.stringify(recentDesignations));
+    displayRecentDesignations();
+    showNotification('Designation removed from recent list', 'info');
+}
+
+// Popular designations for suggestions
+const popularDesignations = [
+    "Chief Executive Officer", "Chief Technology Officer", "Chief Financial Officer", "Chief Marketing Officer", "Chief Operating Officer",
+    "Software Engineer", "Senior Software Engineer", "Lead Software Engineer", "Principal Software Engineer", "Staff Software Engineer",
+    "Product Manager", "Senior Product Manager", "Principal Product Manager", "VP of Product", "Head of Product",
+    "Data Scientist", "Senior Data Scientist", "Lead Data Scientist", "Principal Data Scientist", "Chief Data Officer",
+    "DevOps Engineer", "Senior DevOps Engineer", "Site Reliability Engineer", "Platform Engineer", "Cloud Architect",
+    "UX Designer", "Senior UX Designer", "Lead UX Designer", "UX Researcher", "Design Director",
+    "Frontend Developer", "Senior Frontend Developer", "Backend Developer", "Senior Backend Developer", "Full Stack Developer",
+    "Mobile Developer", "iOS Developer", "Android Developer", "React Native Developer", "Flutter Developer",
+    "QA Engineer", "Senior QA Engineer", "Test Automation Engineer", "QA Manager", "Quality Assurance Lead",
+    "Business Analyst", "Senior Business Analyst", "Data Analyst", "Financial Analyst", "Marketing Analyst",
+    "Sales Manager", "Senior Sales Manager", "Sales Director", "VP of Sales", "Head of Sales",
+    "Marketing Manager", "Senior Marketing Manager", "Digital Marketing Manager", "Content Marketing Manager", "Growth Marketing Manager",
+    "HR Manager", "Senior HR Manager", "HR Director", "VP of HR", "Head of HR",
+    "Operations Manager", "Senior Operations Manager", "Operations Director", "VP of Operations", "Head of Operations",
+    "Finance Manager", "Senior Finance Manager", "Finance Director", "VP of Finance", "Head of Finance",
+    "Legal Counsel", "Senior Legal Counsel", "General Counsel", "Legal Director", "Compliance Manager",
+    "Customer Success Manager", "Senior Customer Success Manager", "Customer Success Director", "VP of Customer Success", "Head of Customer Success",
+    "Account Manager", "Senior Account Manager", "Key Account Manager", "Strategic Account Manager", "Enterprise Account Manager",
+    "Project Manager", "Senior Project Manager", "Program Manager", "Senior Program Manager", "Portfolio Manager",
+    "Scrum Master", "Agile Coach", "Product Owner", "Technical Product Manager", "Senior Technical Product Manager",
+    "Security Engineer", "Senior Security Engineer", "Information Security Manager", "CISO", "Cybersecurity Analyst",
+    "Network Engineer", "Senior Network Engineer", "Systems Administrator", "Senior Systems Administrator", "Infrastructure Engineer",
+    "Database Administrator", "Senior Database Administrator", "Data Engineer", "Senior Data Engineer", "Big Data Engineer",
+    "Machine Learning Engineer", "Senior Machine Learning Engineer", "AI Engineer", "Research Scientist", "Applied Scientist",
+    "Technical Writer", "Senior Technical Writer", "Documentation Manager", "Content Strategist", "Technical Communications Manager"
+];
+
 // Initialize suggestions
 let currentSuggestions = [...popularDesignations];
-let currentPage = 0;
-const itemsPerPage = 9;
 
 // Load recent designations on startup
 loadRecentDesignations();
@@ -210,13 +223,13 @@ function filterSuggestions(searchText) {
             designation.toLowerCase().includes(searchLower)
         );
     }
-    currentPage = 0;
+    currentPage = 1;
     displaySuggestions();
 }
 
 // Function to display suggestions
 function displaySuggestions() {
-    const start = currentPage * itemsPerPage;
+    const start = (currentPage - 1) * itemsPerPage;
     const end = start + itemsPerPage;
     const pageItems = currentSuggestions.slice(start, end);
     
@@ -249,7 +262,7 @@ function displaySuggestions() {
         // Add navigation controls
         html += `
             <div class="flex justify-between items-center py-4">
-                ${currentPage > 0 ? `
+                ${currentPage > 1 ? `
                     <button onclick="previousPage()" 
                             class="text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-2">
                         <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform rotate-180" viewBox="0 0 20 20" fill="currentColor">
@@ -274,7 +287,7 @@ function displaySuggestions() {
             </div>
         `;
     }
-
+    
     suggestionsList.innerHTML = html;
 }
 
@@ -290,7 +303,7 @@ function loadMore() {
 
 // Function to go to previous page
 function previousPage() {
-    if (currentPage > 0) {
+    if (currentPage > 1) {
         currentPage--;
         displaySuggestions();
         // Scroll to top of suggestions list
@@ -310,7 +323,7 @@ function toggleSuggestion(designation) {
 
 // Initialize suggestions display
 displaySuggestions();
-
+        
 // Add search event listener
 suggestionSearch.addEventListener('input', (e) => {
     filterSuggestions(e.target.value);
@@ -356,24 +369,6 @@ function removeDesignation(designation) {
         noDesignationsText.style.display = 'block';
     }
     showNotification('Designation removed', 'info');
-}
-
-// Function to show notification
-function showNotification(message, type = 'info') {
-    const notification = document.createElement('div');
-    notification.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg animate-fade-in
-        ${type === 'error' ? 'bg-red-500 text-white' : 
-          type === 'success' ? 'bg-green-500 text-white' :
-          'bg-blue-500 text-white'}`;
-    notification.textContent = message;
-    document.body.appendChild(notification);
-
-    setTimeout(() => {
-        notification.style.opacity = '0';
-        notification.style.transform = 'translateY(20px)';
-        notification.style.transition = 'all 0.5s ease';
-        setTimeout(() => notification.remove(), 500);
-    }, 3000);
 }
 
 // Function to update the designations list in the UI
@@ -427,9 +422,11 @@ function addCompany(company) {
     }
     
     companies.add(company);
+    saveRecentCompany(company); // Save to recent companies
     updateCompaniesList();
     companyInput.value = '';
     noCompaniesText.style.display = 'none';
+    
     showNotification('Company added successfully', 'success');
 }
 
@@ -483,8 +480,25 @@ companyInput.addEventListener('keypress', (e) => {
     }
 });
 
+// Function to clear all recent designations
+function clearAllRecent() {
+    if (recentDesignations.length === 0) {
+        showNotification('No recent designations to clear', 'info');
+        return;
+    }
+    
+    if (confirm('Are you sure you want to clear all recent designations?')) {
+        recentDesignations = [];
+        filteredRecentDesignations = [];
+        localStorage.setItem('recentDesignations', JSON.stringify(recentDesignations));
+        currentRecentPage = 1;
+        displayRecentDesignations();
+        showNotification('All recent designations cleared', 'success');
+    }
+}
+
 // Function to prepare data for export
-function prepareExportData(companyName = null) {
+function prepareExportData() {
     if (!lastSearchResults) {
         showNotification('No search results to export', 'error');
         return null;
@@ -496,58 +510,119 @@ function prepareExportData(companyName = null) {
     data.push(['Company', 'Designation', 'LinkedIn Profile']);
     
     // Add data rows
-    if (companyName) {
-        // Export data for specific company
-        const companyResult = lastSearchResults.Companies.find(c => c.CompanyName === companyName);
-        if (companyResult) {
-            Object.entries(companyResult.Designations).forEach(([designation, profiles]) => {
-                profiles.forEach(profile => {
-                    data.push([companyResult.CompanyName, designation, profile]);
-                });
-            });
-        }
-    } else {
-        // Export all data
-        lastSearchResults.Companies.forEach(companyResult => {
-            Object.entries(companyResult.Designations).forEach(([designation, profiles]) => {
-                profiles.forEach(profile => {
-                    data.push([companyResult.CompanyName, designation, profile]);
-                });
+    lastSearchResults.Companies.forEach(companyResult => {
+        Object.entries(companyResult.Designations).forEach(([designation, profiles]) => {
+            profiles.forEach(profile => {
+                data.push([companyResult.CompanyName, designation, profile]);
             });
         });
-    }
+    });
 
     return data;
 }
 
-// Function to export data as CSV
-function exportCSV(companyName = null) {
-    const data = prepareExportData(companyName);
+// Function to export all results to CSV (Global export)
+function exportAllToCSV() {
+    const data = prepareExportData();
     if (!data) return;
 
-    const csvContent = data.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
-    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    link.setAttribute('href', url);
-    link.setAttribute('download', `linkedin_profiles${companyName ? '_' + companyName : ''}.csv`);
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    data.forEach(row => {
+        const csvRow = row.map(cell => {
+            // Escape quotes and wrap in quotes if contains comma or quotes
+            const escaped = cell.replace(/"/g, '""');
+            return /[,"]/.test(cell) ? `"${escaped}"` : cell;
+        }).join(',');
+        csvContent += csvRow + "\r\n";
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `linkedin_profiles_all_results_${new Date().toISOString().split('T')[0]}.csv`);
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-    showNotification(`CSV file exported successfully${companyName ? ' for ' + companyName : ''}`, 'success');
+    
+    showNotification('All results exported to CSV successfully', 'success');
 }
 
-// Function to export data as Excel
-function exportExcel(companyName = null) {
-    const data = prepareExportData(companyName);
+// Function to export all results to Excel (Global export)
+function exportAllToExcel() {
+    const data = prepareExportData();
     if (!data) return;
 
     const ws = XLSX.utils.aoa_to_sheet(data);
     const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, 'LinkedIn Profiles');
-    XLSX.writeFile(wb, `linkedin_profiles${companyName ? '_' + companyName : ''}.xlsx`);
-    showNotification(`Excel file exported successfully${companyName ? ' for ' + companyName : ''}`, 'success');
+    XLSX.utils.book_append_sheet(wb, ws, "LinkedIn Profiles - All Results");
+
+    // Generate and download the Excel file
+    XLSX.writeFile(wb, `linkedin_profiles_all_results_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    showNotification('All results exported to Excel successfully', 'success');
 }
+
+// Function to export to CSV (Individual company - for hover buttons)
+function exportToCSV() {
+    const data = prepareExportData();
+    if (!data) return;
+
+    let csvContent = "data:text/csv;charset=utf-8,";
+    
+    data.forEach(row => {
+        const csvRow = row.map(cell => {
+            // Escape quotes and wrap in quotes if contains comma or quotes
+            const escaped = cell.replace(/"/g, '""');
+            return /[,"]/.test(cell) ? `"${escaped}"` : cell;
+        }).join(',');
+        csvContent += csvRow + "\r\n";
+    });
+
+    const encodedUri = encodeURI(csvContent);
+    const link = document.createElement("a");
+    link.setAttribute("href", encodedUri);
+    link.setAttribute("download", `linkedin_profiles_${new Date().toISOString().split('T')[0]}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    showNotification('CSV file exported successfully', 'success');
+}
+
+// Function to export to Excel (Individual company - for hover buttons)
+function exportToExcel() {
+    const data = prepareExportData();
+    if (!data) return;
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, "LinkedIn Profiles");
+
+    // Generate and download the Excel file
+    XLSX.writeFile(wb, `linkedin_profiles_${new Date().toISOString().split('T')[0]}.xlsx`);
+    
+    showNotification('Excel file exported successfully', 'success');
+}
+
+// Make functions available globally
+window.toggleSuggestion = toggleSuggestion;
+window.loadMore = loadMore;
+window.previousPage = previousPage;
+window.nextRecentPage = nextRecentPage;
+window.previousRecentPage = previousRecentPage;
+window.clearAllRecent = clearAllRecent;
+window.deleteRecentDesignation = deleteRecentDesignation;
+window.addDesignationFromRecent = addDesignationFromRecent;
+window.exportToCSV = exportToCSV;
+window.exportToExcel = exportToExcel;
+window.exportAllToCSV = exportAllToCSV;
+window.exportAllToExcel = exportAllToExcel;
+window.selectRecentCompany = selectRecentCompany;
+window.deleteRecentCompany = deleteRecentCompany;
+window.nextRecentCompanyPage = nextRecentCompanyPage;
+window.previousRecentCompanyPage = previousRecentCompanyPage;
+window.clearAllRecentCompanies = clearAllRecentCompanies;
 
 // Update the display results section to include company-specific export buttons
 function updateResults(results) {
@@ -557,21 +632,42 @@ function updateResults(results) {
             <h2 class="text-xl font-semibold mb-6 pb-2 border-b">Search Results</h2>
     `;
     
-    results.Companies.forEach(companyResult => {
+    // Array of gradient backgrounds for different companies
+    const companyBackgrounds = [
+        'bg-gradient-to-br from-blue-50 to-indigo-100 border-l-4 border-blue-500',
+        'bg-gradient-to-br from-green-50 to-emerald-100 border-l-4 border-green-500',
+        'bg-gradient-to-br from-purple-50 to-violet-100 border-l-4 border-purple-500',
+        'bg-gradient-to-br from-pink-50 to-rose-100 border-l-4 border-pink-500',
+        'bg-gradient-to-br from-yellow-50 to-amber-100 border-l-4 border-yellow-500',
+        'bg-gradient-to-br from-cyan-50 to-teal-100 border-l-4 border-cyan-500',
+        'bg-gradient-to-br from-orange-50 to-red-100 border-l-4 border-orange-500',
+        'bg-gradient-to-br from-slate-50 to-gray-100 border-l-4 border-slate-500'
+    ];
+    
+    results.Companies.forEach((companyResult, index) => {
+        const backgroundClass = companyBackgrounds[index % companyBackgrounds.length];
+        
         resultsHTML += `
-            <div class="mb-8">
-                <div class="flex items-center justify-between mb-4">
-                    <h3 class="text-lg font-semibold text-gray-800">${companyResult.CompanyName}</h3>
+            <div class="mb-8 ${backgroundClass} rounded-xl p-6 shadow-lg border backdrop-blur-sm">
+                <div class="flex items-center justify-between mb-6">
+                    <div class="flex items-center space-x-3">
+                        <div class="p-2 bg-white rounded-lg shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-gray-600" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M4 4a2 2 0 012-2h8a2 2 0 012 2v12a1 1 0 01-1 1H5a1 1 0 01-1-1V4zm3 1h6v4H7V5zm6 6H7v2h6v-2z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <h3 class="text-xl font-bold text-gray-800">${companyResult.CompanyName}</h3>
+                    </div>
                     <div class="flex items-center space-x-2 opacity-0 transition-opacity duration-200 hover:opacity-100 export-buttons">
-                        <button onclick="exportCSV('${companyResult.CompanyName}')"
-                                class="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 flex items-center space-x-1">
+                        <button onclick="exportToCSV()"
+                                class="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 flex items-center space-x-1 shadow-md">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
                             </svg>
                             <span>CSV</span>
                         </button>
-                        <button onclick="exportExcel('${companyResult.CompanyName}')"
-                                class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center space-x-1">
+                        <button onclick="exportToExcel()"
+                                class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center space-x-1 shadow-md">
                             <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
                                 <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
                             </svg>
@@ -585,30 +681,36 @@ function updateResults(results) {
             resultsHTML += `
                 <div class="mb-6 animate-fade-in">
                     <div class="flex items-center space-x-2 mb-3">
-                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                        </svg>
-                        <h4 class="text-md font-medium text-gray-800">${designation}</h4>
-                        <span class="text-sm text-gray-500">(${profiles.length} profiles found)</span>
+                        <div class="p-1.5 bg-white rounded-md shadow-sm">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                            </svg>
+                        </div>
+                        <h4 class="text-md font-semibold text-gray-800">${designation}</h4>
+                        <span class="text-sm text-gray-600 bg-white px-2 py-1 rounded-full shadow-sm font-medium">
+                            ${profiles.length} profile${profiles.length !== 1 ? 's' : ''} found
+                        </span>
                     </div>
                     ${profiles.length > 0 
-                        ? `<div class="bg-white rounded-lg shadow-sm border p-4">
-                            <ul class="space-y-2">
+                        ? `<div class="bg-white rounded-lg shadow-md border border-gray-200 p-4 ml-8">
+                            <ul class="space-y-3">
                                 ${profiles.map(profile => `
-                                    <li class="hover:bg-gray-50 p-2 rounded transition-colors">
+                                    <li class="hover:bg-gray-50 p-3 rounded-lg transition-colors border border-gray-100 hover:border-gray-200 hover:shadow-sm">
                                         <a href="${profile}" target="_blank" 
-                                           class="text-blue-600 hover:text-blue-800 flex items-center space-x-2">
-                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-                                                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-                                            </svg>
-                                            <span>${profile}</span>
+                                           class="text-blue-600 hover:text-blue-800 flex items-center space-x-3 font-medium">
+                                            <div class="p-1.5 bg-blue-50 rounded-md">
+                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                                                    <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                                                    <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                                                </svg>
+                                            </div>
+                                            <span class="break-all">${profile}</span>
                                         </a>
                                     </li>
                                 `).join('')}
                             </ul>
                            </div>`
-                        : '<p class="text-gray-500 italic">No profiles found</p>'
+                        : '<div class="ml-8"><p class="text-gray-500 italic bg-white p-4 rounded-lg border border-gray-200 shadow-sm">No profiles found</p></div>'
                     }
                 </div>
             `;
@@ -633,7 +735,86 @@ function updateResults(results) {
     document.head.appendChild(style);
 }
 
-// Update the search form submission to use the new updateResults function
+// Function to create a delay
+function sleep(ms) {
+    return new Promise(resolve => setTimeout(resolve, ms));
+}
+
+// Function to make API call with enhanced retry logic
+async function makeSearchRequest(company, designations, resultCount, retryCount = 5) {
+    let baseDelay = 15000; // 15 seconds base delay (increased from 5 seconds)
+    
+    console.log(`Starting API request for ${company}...`);
+    
+    for (let attempt = 1; attempt <= retryCount; attempt++) {
+        try {
+            console.log(`Attempt ${attempt}/${retryCount} for ${company}`);
+            
+            const response = await fetch('/search', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json'
+                },
+                body: JSON.stringify({
+                    company,
+                    designations: Array.from(designations),
+                    resultCount
+                })
+            });
+
+            // Enhanced 429 rate limiting handling
+            if (response.status === 429) {
+                const retryAfter = response.headers.get('Retry-After');
+                // Use longer wait times for 429 errors - minimum 30 seconds
+                const baseWaitTime = Math.max(30000, baseDelay * Math.pow(2, attempt));
+                const waitTime = retryAfter ? Math.max(parseInt(retryAfter) * 1000, baseWaitTime) : baseWaitTime;
+                
+                console.log(`⚠️ Rate limited (429) for ${company}. Waiting ${waitTime/1000} seconds before retry ${attempt}/${retryCount}`);
+                showNotification(`Rate limited for ${company}. Waiting ${Math.round(waitTime/1000)} seconds...`, 'warning');
+                
+                await sleep(waitTime);
+                continue;
+            }
+
+            if (!response.ok) {
+                throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
+            }
+
+            const data = await response.json();
+            console.log(`✅ Successfully fetched data for ${company}`);
+            
+            // After successful request, wait before returning to prevent rate limits on subsequent requests
+            console.log(`Waiting ${baseDelay/1000} seconds before next request...`);
+            await sleep(baseDelay);
+            return data;
+
+        } catch (error) {
+            console.log(`❌ Attempt ${attempt}/${retryCount} failed for ${company}:`, error.message);
+            
+            // Special handling for 429 errors caught in catch block
+            if (error.message.includes('429')) {
+                const waitTime = Math.max(30000, baseDelay * Math.pow(2, attempt));
+                console.log(`Rate limit error in catch block. Waiting ${waitTime/1000} seconds...`);
+                showNotification(`Rate limit error for ${company}. Extended wait...`, 'warning');
+                await sleep(waitTime);
+                continue;
+            }
+            
+            if (attempt === retryCount) {
+                console.log(`🚫 All attempts exhausted for ${company}`);
+                throw error;
+            }
+            
+            // Exponential backoff with longer delays
+            const waitTime = baseDelay * Math.pow(2, attempt);
+            console.log(`Waiting ${waitTime/1000} seconds before retry...`);
+            await sleep(waitTime);
+        }
+    }
+    throw new Error(`Failed to fetch data for ${company} after ${retryCount} attempts`);
+}
+
+// Update the search form submission to use the new request function with delays
 searchForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -655,38 +836,85 @@ searchForm.addEventListener('submit', async (e) => {
 
     const resultsDiv = document.getElementById('results');
     resultsDiv.innerHTML = `
-        <div class="flex items-center justify-center space-x-3 text-gray-600">
-            <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-            </svg>
-            <span>Searching profiles... Please wait.</span>
+        <div class="flex flex-col items-center justify-center space-y-4 text-gray-600">
+            <div class="flex items-center space-x-3">
+                <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                <span>Initializing search...</span>
+            </div>
+            <div class="text-sm text-gray-500">
+                Enhanced rate limiting active: This will take several minutes
+            </div>
+            <div class="text-xs text-gray-400">
+                Using 15s delays, 5 retries, and 30s+ waits for rate limits
+            </div>
         </div>
     `;
 
-    // Hide export buttons while searching
+    // Hide export buttons and sticky export bar while searching
     exportButtons.style.display = 'none';
+    document.getElementById('stickyExportBar').style.display = 'none';
 
     try {
-        const searchPromises = Array.from(companies).map(company => 
-            fetch('/search', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify({
-                    company,
-                    designations: Array.from(designations),
-                    resultCount
-                })
-            }).then(response => response.json())
-        );
+        const companiesArray = Array.from(companies);
+        const results = [];
+        let successCount = 0;
+        let failureCount = 0;
 
-        const results = await Promise.all(searchPromises);
+        // Sequential API calls with enhanced delay and status tracking
+        for (let i = 0; i < companiesArray.length; i++) {
+            try {
+                // Add initial delay between companies (except for the first one)
+                if (i > 0) {
+                    console.log(`Adding 10-second delay before processing next company...`);
+                    await sleep(10000); // 10 second delay between companies
+                }
+                
+                resultsDiv.innerHTML = `
+                    <div class="flex flex-col items-center justify-center space-y-4 text-gray-600">
+                        <div class="flex items-center space-x-3">
+                            <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                            </svg>
+                            <span>Searching profiles... Please wait.</span>
+                        </div>
+                        <div class="w-full max-w-md bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                            <div class="bg-blue-600 h-2.5 rounded-full" style="width: ${(i / companiesArray.length) * 100}%"></div>
+                        </div>
+                        <div class="text-sm text-gray-500">
+                            Processing company ${i + 1} of ${companiesArray.length}: <strong>${companiesArray[i]}</strong>
+                        </div>
+                        <div class="text-xs text-gray-500">
+                            Success: ${successCount} | Failures: ${failureCount}
+                        </div>
+                        <div class="text-xs text-gray-400">
+                            Enhanced rate limiting: 15s delays, 5 retries, 30s+ for 429 errors
+                        </div>
+                        <div class="text-xs text-blue-600">
+                            Estimated time remaining: ~${Math.ceil((companiesArray.length - i) * 2)} minutes
+                        </div>
+                    </div>
+                `;
+
+                const result = await makeSearchRequest(companiesArray[i], designations, resultCount);
+                results.push(result);
+                successCount++;
+                console.log(`✅ Successfully completed ${companiesArray[i]} (${successCount}/${companiesArray.length})`);
+
+            } catch (error) {
+                console.error(`❌ Error processing company ${companiesArray[i]}:`, error);
+                showNotification(`Failed to process ${companiesArray[i]} after 5 attempts. Check console for details.`, 'error');
+                results.push({ Designations: {} });
+                failureCount++;
+            }
+        }
         
         lastSearchResults = {
             Companies: results.map((result, index) => ({
-                CompanyName: Array.from(companies)[index],
+                CompanyName: companiesArray[index],
                 Designations: result.Designations
             }))
         };
@@ -697,9 +925,15 @@ searchForm.addEventListener('submit', async (e) => {
         if (lastSearchResults.Companies.some(company => 
             Object.values(company.Designations).some(profiles => profiles.length > 0))) {
             exportButtons.style.display = 'flex';
+            // Show sticky export bar
+            document.getElementById('stickyExportBar').style.display = 'block';
         }
 
-        showNotification('Search completed successfully', 'success');
+        const totalProcessed = successCount + failureCount;
+        showNotification(
+            `Search completed. Successfully processed ${successCount} out of ${totalProcessed} companies.`,
+            successCount === totalProcessed ? 'success' : 'warning'
+        );
     } catch (error) {
         resultsDiv.innerHTML = `
             <div class="bg-red-50 border-l-4 border-red-500 p-4 rounded animate-fade-in">
@@ -716,48 +950,198 @@ searchForm.addEventListener('submit', async (e) => {
     }
 });
 
-// Function to clear all recent designations
-function clearAllRecent() {
-    if (confirm('Are you sure you want to clear all recent designations?')) {
-        recentDesignations = [];
-        filteredRecentDesignations = [];
-        saveRecentDesignations();
-        displayRecentDesignations();
-        showNotification('All recent designations cleared', 'info');
+// Function to show notification
+function showNotification(message, type = 'info') {
+    const notification = document.createElement('div');
+    notification.className = `fixed bottom-4 right-4 px-6 py-3 rounded-lg shadow-lg animate-fade-in
+        ${type === 'error' ? 'bg-red-500 text-white' : 
+          type === 'success' ? 'bg-green-500 text-white' :
+          'bg-blue-500 text-white'}`;
+    notification.textContent = message;
+    document.body.appendChild(notification);
+
+    setTimeout(() => {
+        notification.style.opacity = '0';
+        notification.style.transform = 'translateY(20px)';
+        notification.style.transition = 'all 0.5s ease';
+        setTimeout(() => notification.remove(), 500);
+    }, 3000);
+}
+
+// Validate result count input
+resultCountInput.addEventListener('change', () => {
+    let value = parseInt(resultCountInput.value);
+    if (value < 1) resultCountInput.value = 1;
+    if (value > 100) resultCountInput.value = 100;
+});
+
+// Add search event listener for recent designations
+recentSearch.addEventListener('input', (e) => {
+    filterRecentDesignations(e.target.value);
+});
+
+// Load recent designations on startup
+loadRecentDesignations();
+displayRecentDesignations();
+
+// Recent companies functionality
+function saveRecentCompany(company) {
+    if (!company || company.trim() === '') return;
+    
+    company = company.trim();
+    
+    // Remove if already exists
+    recentCompanies = recentCompanies.filter(c => c.toLowerCase() !== company.toLowerCase());
+    
+    // Add to beginning
+    recentCompanies.unshift(company);
+    
+    // Keep only last 50
+    if (recentCompanies.length > 50) {
+        recentCompanies = recentCompanies.slice(0, 50);
+    }
+    
+    // Save to localStorage
+    localStorage.setItem('recentCompanies', JSON.stringify(recentCompanies));
+    
+    // Update filtered list
+    filteredRecentCompanies = [...recentCompanies];
+    displayRecentCompanies();
+}
+
+function loadRecentCompanies() {
+    recentCompanies = JSON.parse(localStorage.getItem('recentCompanies')) || [];
+    filteredRecentCompanies = [...recentCompanies];
+}
+
+function displayRecentCompanies() {
+    const recentCompaniesList = document.getElementById('recentCompaniesList');
+    const startIndex = (currentRecentCompanyPage - 1) * recentItemsPerPage;
+    const endIndex = startIndex + recentItemsPerPage;
+    const currentItems = filteredRecentCompanies.slice(startIndex, endIndex);
+    
+    if (currentItems.length === 0) {
+        recentCompaniesList.innerHTML = `
+            <div class="text-center text-gray-500 py-4">
+                <p>No recent companies</p>
+            </div>
+        `;
+        return;
+    }
+    
+    let html = '';
+    currentItems.forEach((company, index) => {
+        html += `
+            <div class="flex items-center justify-between p-3 bg-gray-50 hover:bg-blue-50 rounded-lg cursor-pointer transition-colors border border-gray-200 hover:border-blue-300">
+                <span onclick="selectRecentCompany('${company.replace(/'/g, "\\'")}')" 
+                      class="flex-1 text-gray-700 hover:text-blue-600 font-medium">
+                    ${company}
+                </span>
+                <button onclick="deleteRecentCompany(${startIndex + index})" 
+                        class="text-red-500 hover:text-red-700 ml-2 p-1 rounded">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+        `;
+    });
+    
+    // Add pagination for recent companies
+    const totalPages = Math.ceil(filteredRecentCompanies.length / recentItemsPerPage);
+    if (totalPages > 1) {
+        html += `
+            <div class="flex items-center justify-between mt-4 pt-4 border-t text-sm text-gray-600">
+                <button onclick="previousRecentCompanyPage()" 
+                        class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors ${currentRecentCompanyPage === 1 ? 'opacity-50 cursor-not-allowed' : ''}">
+                    Previous
+                </button>
+                <span>Page ${currentRecentCompanyPage} of ${totalPages}</span>
+                <button onclick="nextRecentCompanyPage()" 
+                        class="px-3 py-1 bg-gray-100 hover:bg-gray-200 rounded transition-colors ${currentRecentCompanyPage === totalPages ? 'opacity-50 cursor-not-allowed' : ''}">
+                    Next
+                </button>
+            </div>
+        `;
+    }
+    
+    recentCompaniesList.innerHTML = html;
+}
+
+function selectRecentCompany(company) {
+    addCompany(company);
+}
+
+function deleteRecentCompany(index) {
+    const actualIndex = recentCompanies.findIndex(company => 
+        company === filteredRecentCompanies[index]
+    );
+    
+    if (actualIndex !== -1) {
+        recentCompanies.splice(actualIndex, 1);
+        localStorage.setItem('recentCompanies', JSON.stringify(recentCompanies));
+        
+        // Update filtered list
+        const searchTerm = document.getElementById('recentCompanySearch').value.toLowerCase();
+        filteredRecentCompanies = recentCompanies.filter(company =>
+            company.toLowerCase().includes(searchTerm)
+        );
+        
+        // Adjust page if necessary
+        const totalPages = Math.ceil(filteredRecentCompanies.length / recentItemsPerPage);
+        if (currentRecentCompanyPage > totalPages && totalPages > 0) {
+            currentRecentCompanyPage = totalPages;
+        } else if (filteredRecentCompanies.length === 0) {
+            currentRecentCompanyPage = 1;
+        }
+        
+        displayRecentCompanies();
+        showNotification('Company removed from recent list', 'success');
     }
 }
 
-// Function to delete a single recent designation
-function deleteRecentDesignation(designation, event) {
-    // Prevent the click from triggering the parent's onclick
-    event.stopPropagation();
-    
-    recentDesignations = recentDesignations.filter(d => d !== designation);
-    filteredRecentDesignations = filteredRecentDesignations.filter(d => d !== designation);
-    saveRecentDesignations();
-    displayRecentDesignations();
-    showNotification('Designation removed from recent list', 'info');
+// Recent companies pagination
+function nextRecentCompanyPage() {
+    const totalPages = Math.ceil(filteredRecentCompanies.length / recentItemsPerPage);
+    if (currentRecentCompanyPage < totalPages) {
+        currentRecentCompanyPage++;
+        displayRecentCompanies();
+    }
 }
 
-// Make functions available globally
-window.toggleSuggestion = toggleSuggestion;
-window.loadMore = loadMore;
-window.previousPage = previousPage;
-window.nextRecentPage = nextRecentPage;
-window.previousRecentPage = previousRecentPage;
-window.clearAllRecent = clearAllRecent;
-window.deleteRecentDesignation = deleteRecentDesignation;
-window.toggleSuggestion = toggleSuggestion;
-window.loadMore = loadMore;
-window.previousPage = previousPage;
-window.nextRecentPage = nextRecentPage;
-window.previousRecentPage = previousRecentPage;
-window.clearAllRecent = clearAllRecent;
-window.deleteRecentDesignation = deleteRecentDesignation;
-window.toggleSuggestion = toggleSuggestion;
-window.loadMore = loadMore;
-window.previousPage = previousPage;
-window.nextRecentPage = nextRecentPage;
-window.previousRecentPage = previousRecentPage;
-window.clearAllRecent = clearAllRecent;
-window.deleteRecentDesignation = deleteRecentDesignation; 
+function previousRecentCompanyPage() {
+    if (currentRecentCompanyPage > 1) {
+        currentRecentCompanyPage--;
+        displayRecentCompanies();
+    }
+}
+
+// Search recent companies
+document.getElementById('recentCompanySearch').addEventListener('input', function(e) {
+    const searchTerm = e.target.value.toLowerCase();
+    filteredRecentCompanies = recentCompanies.filter(company =>
+        company.toLowerCase().includes(searchTerm)
+    );
+    currentRecentCompanyPage = 1;
+    displayRecentCompanies();
+});
+
+function clearAllRecentCompanies() {
+    if (recentCompanies.length === 0) {
+        showNotification('No recent companies to clear', 'info');
+        return;
+    }
+    
+    if (confirm('Are you sure you want to clear all recent companies?')) {
+        recentCompanies = [];
+        filteredRecentCompanies = [];
+        localStorage.setItem('recentCompanies', JSON.stringify(recentCompanies));
+        currentRecentCompanyPage = 1;
+        displayRecentCompanies();
+        showNotification('All recent companies cleared', 'success');
+    }
+}
+
+// Load recent companies on startup
+loadRecentCompanies();
+displayRecentCompanies(); 

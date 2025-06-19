@@ -27,6 +27,148 @@ const popularDesignations = [
     "Research Scientist", "Research Engineer", "R&D Manager", "Innovation Manager", "Research Director"
 ];
 
+// Recent designations management
+const RECENT_DESIGNATIONS_KEY = 'recentDesignations';
+const MAX_RECENT_DESIGNATIONS = 50;
+let recentDesignations = [];
+let filteredRecentDesignations = [];
+let recentPage = 0;
+
+// Load recent designations from localStorage
+function loadRecentDesignations() {
+    const stored = localStorage.getItem(RECENT_DESIGNATIONS_KEY);
+    if (stored) {
+        recentDesignations = JSON.parse(stored);
+        filteredRecentDesignations = [...recentDesignations];
+    }
+}
+
+// Save recent designations to localStorage
+function saveRecentDesignations() {
+    localStorage.setItem(RECENT_DESIGNATIONS_KEY, JSON.stringify(recentDesignations));
+}
+
+// Add designation to recent list
+function addToRecent(designation) {
+    // Remove if already exists
+    recentDesignations = recentDesignations.filter(d => d !== designation);
+    // Add to front of array
+    recentDesignations.unshift(designation);
+    // Keep only the most recent MAX_RECENT_DESIGNATIONS
+    if (recentDesignations.length > MAX_RECENT_DESIGNATIONS) {
+        recentDesignations = recentDesignations.slice(0, MAX_RECENT_DESIGNATIONS);
+    }
+    filteredRecentDesignations = [...recentDesignations];
+    saveRecentDesignations();
+    displayRecentDesignations();
+}
+
+// Filter recent designations
+function filterRecentDesignations(searchText) {
+    if (!searchText) {
+        filteredRecentDesignations = [...recentDesignations];
+    } else {
+        const searchLower = searchText.toLowerCase();
+        filteredRecentDesignations = recentDesignations.filter(designation => 
+            designation.toLowerCase().includes(searchLower)
+        );
+    }
+    recentPage = 0;
+    displayRecentDesignations();
+}
+
+// Display recent designations
+function displayRecentDesignations() {
+    const recentList = document.getElementById('recentDesignationsList');
+    const start = recentPage * itemsPerPage;
+    const end = start + itemsPerPage;
+    const pageItems = filteredRecentDesignations.slice(start, end);
+    
+    let html = '';
+    
+    if (filteredRecentDesignations.length === 0) {
+        html = `
+            <div class="text-center text-gray-500 py-4">
+                <p>No recent designations</p>
+            </div>
+        `;
+    } else {
+        pageItems.forEach(designation => {
+            const isSelected = designations.has(designation);
+            html += `
+                <div class="designation-suggestion p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-200 cursor-pointer ${isSelected ? 'border-2 border-blue-500' : ''}"
+                     onclick="toggleSuggestion('${designation.replace(/'/g, "\\'")}')">
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-700">${designation}</span>
+                        <div class="flex items-center space-x-2">
+                            ${isSelected ? `
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                </svg>
+                            ` : ''}
+                            <button onclick="deleteRecentDesignation('${designation.replace(/'/g, "\\'")}', event)"
+                                    class="text-gray-400 hover:text-red-500 transition-colors duration-200 p-1 rounded-full hover:bg-gray-200">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            `;
+        });
+
+        // Add navigation controls
+        if (filteredRecentDesignations.length > itemsPerPage) {
+            html += `
+                <div class="flex justify-between items-center py-4">
+                    ${recentPage > 0 ? `
+                        <button onclick="previousRecentPage()" 
+                                class="text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform rotate-180" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Previous</span>
+                        </button>
+                    ` : `<div></div>`}
+                    
+                    ${end < filteredRecentDesignations.length ? `
+                        <button onclick="nextRecentPage()" 
+                                class="text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-2">
+                            <span>Next</span>
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                        </button>
+                    ` : `<div></div>`}
+                </div>
+                <div class="text-center text-sm text-gray-500">
+                    Showing ${start + 1}-${end} of ${filteredRecentDesignations.length}
+                </div>
+            `;
+        }
+    }
+
+    recentList.innerHTML = html;
+}
+
+// Navigation functions for recent designations
+function nextRecentPage() {
+    if ((recentPage + 1) * itemsPerPage < filteredRecentDesignations.length) {
+        recentPage++;
+        displayRecentDesignations();
+        document.getElementById('recentDesignationsList').scrollTop = 0;
+    }
+}
+
+function previousRecentPage() {
+    if (recentPage > 0) {
+        recentPage--;
+        displayRecentDesignations();
+        document.getElementById('recentDesignationsList').scrollTop = 0;
+    }
+}
+
 // Get DOM elements
 const designationInput = document.getElementById('designationInput');
 const addDesignationBtn = document.getElementById('addDesignation');
@@ -37,11 +179,21 @@ const resultCountInput = document.getElementById('resultCount');
 const exportButtons = document.getElementById('exportButtons');
 const suggestionSearch = document.getElementById('suggestionSearch');
 const suggestionsList = document.getElementById('suggestionsList');
+const recentSearch = document.getElementById('recentSearch');
 
 // Initialize suggestions
 let currentSuggestions = [...popularDesignations];
 let currentPage = 0;
 const itemsPerPage = 9;
+
+// Load recent designations on startup
+loadRecentDesignations();
+displayRecentDesignations();
+
+// Add search event listener for recent designations
+recentSearch.addEventListener('input', (e) => {
+    filterRecentDesignations(e.target.value);
+});
 
 // Function to filter suggestions based on search
 function filterSuggestions(searchText) {
@@ -163,6 +315,8 @@ suggestionSearch.addEventListener('input', (e) => {
 window.toggleSuggestion = toggleSuggestion;
 window.loadMore = loadMore;
 window.previousPage = previousPage;
+window.nextRecentPage = nextRecentPage;
+window.previousRecentPage = previousRecentPage;
 
 // Validate result count input
 resultCountInput.addEventListener('change', () => {
@@ -182,6 +336,7 @@ function addDesignation(designation) {
     }
     
     designations.add(designation);
+    addToRecent(designation); // Add to recent designations
     updateDesignationsList();
     designationInput.value = '';
     noDesignationsText.style.display = 'none';
@@ -434,4 +589,50 @@ searchForm.addEventListener('submit', async (e) => {
         showNotification('Error occurred while searching', 'error');
         console.error('Error:', error);
     }
-}); 
+});
+
+// Function to clear all recent designations
+function clearAllRecent() {
+    if (confirm('Are you sure you want to clear all recent designations?')) {
+        recentDesignations = [];
+        filteredRecentDesignations = [];
+        saveRecentDesignations();
+        displayRecentDesignations();
+        showNotification('All recent designations cleared', 'info');
+    }
+}
+
+// Function to delete a single recent designation
+function deleteRecentDesignation(designation, event) {
+    // Prevent the click from triggering the parent's onclick
+    event.stopPropagation();
+    
+    recentDesignations = recentDesignations.filter(d => d !== designation);
+    filteredRecentDesignations = filteredRecentDesignations.filter(d => d !== designation);
+    saveRecentDesignations();
+    displayRecentDesignations();
+    showNotification('Designation removed from recent list', 'info');
+}
+
+// Make functions available globally
+window.toggleSuggestion = toggleSuggestion;
+window.loadMore = loadMore;
+window.previousPage = previousPage;
+window.nextRecentPage = nextRecentPage;
+window.previousRecentPage = previousRecentPage;
+window.clearAllRecent = clearAllRecent;
+window.deleteRecentDesignation = deleteRecentDesignation;
+window.toggleSuggestion = toggleSuggestion;
+window.loadMore = loadMore;
+window.previousPage = previousPage;
+window.nextRecentPage = nextRecentPage;
+window.previousRecentPage = previousRecentPage;
+window.clearAllRecent = clearAllRecent;
+window.deleteRecentDesignation = deleteRecentDesignation;
+window.toggleSuggestion = toggleSuggestion;
+window.loadMore = loadMore;
+window.previousPage = previousPage;
+window.nextRecentPage = nextRecentPage;
+window.previousRecentPage = previousRecentPage;
+window.clearAllRecent = clearAllRecent;
+window.deleteRecentDesignation = deleteRecentDesignation; 

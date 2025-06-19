@@ -677,21 +677,12 @@ function updateResults(results) {
     resultsDiv.innerHTML = resultsHTML;
 }
 
-// Function to create a delay
-function sleep(ms) {
-    return new Promise(resolve => setTimeout(resolve, ms));
-}
+// Sleep function removed - no longer needed without rate limiting
 
-// Function to make API call with enhanced retry logic
-async function makeSearchRequest(company, designations, resultCount, retryCount = 5) {
-    let baseDelay = 15000; // 15 seconds base delay (increased from 5 seconds)
-    
-    console.log(`Starting API request for ${company}...`);
-    
+// Function to make API call without rate limiting
+async function makeSearchRequest(company, designations, resultCount, retryCount = 3) {
     for (let attempt = 1; attempt <= retryCount; attempt++) {
         try {
-            console.log(`Attempt ${attempt}/${retryCount} for ${company}`);
-            
             const response = await fetch('/search', {
                 method: 'POST',
                 headers: {
@@ -704,59 +695,24 @@ async function makeSearchRequest(company, designations, resultCount, retryCount 
                 })
             });
 
-            // Enhanced 429 rate limiting handling
-            if (response.status === 429) {
-                const retryAfter = response.headers.get('Retry-After');
-                // Use longer wait times for 429 errors - minimum 30 seconds
-                const baseWaitTime = Math.max(30000, baseDelay * Math.pow(2, attempt));
-                const waitTime = retryAfter ? Math.max(parseInt(retryAfter) * 1000, baseWaitTime) : baseWaitTime;
-                
-                console.log(`⚠️ Rate limited (429) for ${company}. Waiting ${waitTime/1000} seconds before retry ${attempt}/${retryCount}`);
-                showNotification(`Rate limited for ${company}. Waiting ${Math.round(waitTime/1000)} seconds...`, 'warning');
-                
-                await sleep(waitTime);
-                continue;
-            }
-
             if (!response.ok) {
                 throw new Error(`HTTP error! status: ${response.status} - ${response.statusText}`);
             }
 
             const data = await response.json();
-            console.log(`✅ Successfully fetched data for ${company}`);
-            
-            // After successful request, wait before returning to prevent rate limits on subsequent requests
-            console.log(`Waiting ${baseDelay/1000} seconds before next request...`);
-            await sleep(baseDelay);
             return data;
 
         } catch (error) {
-            console.log(`❌ Attempt ${attempt}/${retryCount} failed for ${company}:`, error.message);
-            
-            // Special handling for 429 errors caught in catch block
-            if (error.message.includes('429')) {
-                const waitTime = Math.max(30000, baseDelay * Math.pow(2, attempt));
-                console.log(`Rate limit error in catch block. Waiting ${waitTime/1000} seconds...`);
-                showNotification(`Rate limit error for ${company}. Extended wait...`, 'warning');
-                await sleep(waitTime);
-                continue;
-            }
-            
+            console.log(`Attempt ${attempt}/${retryCount} failed for ${company}:`, error.message);
             if (attempt === retryCount) {
-                console.log(`🚫 All attempts exhausted for ${company}`);
                 throw error;
             }
-            
-            // Exponential backoff with longer delays
-            const waitTime = baseDelay * Math.pow(2, attempt);
-            console.log(`Waiting ${waitTime/1000} seconds before retry...`);
-            await sleep(waitTime);
         }
     }
     throw new Error(`Failed to fetch data for ${company} after ${retryCount} attempts`);
 }
 
-// Update the search form submission to use the new request function with delays
+// Update the search form submission to use parallel processing without rate limiting
 searchForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -782,15 +738,12 @@ searchForm.addEventListener('submit', async (e) => {
             <div class="flex items-center space-x-3">
                 <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                     <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 818-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
                 <span>Initializing search...</span>
             </div>
             <div class="text-sm text-gray-500">
-                Enhanced rate limiting active: This will take several minutes
-            </div>
-            <div class="text-xs text-gray-400">
-                Using 15s delays, 5 retries, and 30s+ waits for rate limits
+                Processing requests at full speed
             </div>
         </div>
     `;
@@ -798,60 +751,60 @@ searchForm.addEventListener('submit', async (e) => {
     // Hide sticky export bar while searching
     document.getElementById('stickyExportBar').style.display = 'none';
 
+    // Scroll down to show the results area
+    resultsDiv.scrollIntoView({ 
+        behavior: 'smooth', 
+        block: 'start' 
+    });
+
     try {
         const companiesArray = Array.from(companies);
         const results = [];
         let successCount = 0;
         let failureCount = 0;
 
-        // Sequential API calls with enhanced delay and status tracking
-        for (let i = 0; i < companiesArray.length; i++) {
+        // Parallel API calls for faster processing
+        const promises = companiesArray.map(async (company, index) => {
             try {
-                // Add initial delay between companies (except for the first one)
-                if (i > 0) {
-                    console.log(`Adding 10-second delay before processing next company...`);
-                    await sleep(10000); // 10 second delay between companies
-                }
-                
                 resultsDiv.innerHTML = `
                     <div class="flex flex-col items-center justify-center space-y-4 text-gray-600">
                         <div class="flex items-center space-x-3">
                             <svg class="animate-spin h-5 w-5" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                                 <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
-                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 818-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 714 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                             </svg>
                             <span>Searching profiles... Please wait.</span>
                         </div>
-                        <div class="w-full max-w-md bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
-                            <div class="bg-blue-600 h-2.5 rounded-full" style="width: ${(i / companiesArray.length) * 100}%"></div>
-                        </div>
                         <div class="text-sm text-gray-500">
-                            Processing company ${i + 1} of ${companiesArray.length}: <strong>${companiesArray[i]}</strong>
-                        </div>
-                        <div class="text-xs text-gray-500">
-                            Success: ${successCount} | Failures: ${failureCount}
+                            Processing all companies simultaneously for faster results
                         </div>
                         <div class="text-xs text-gray-400">
-                            Enhanced rate limiting: 15s delays, 5 retries, 30s+ for 429 errors
-                        </div>
-                        <div class="text-xs text-blue-600">
-                            Estimated time remaining: ~${Math.ceil((companiesArray.length - i) * 2)} minutes
+                            Companies: ${companiesArray.join(', ')}
                         </div>
                     </div>
                 `;
 
-                const result = await makeSearchRequest(companiesArray[i], designations, resultCount);
-                results.push(result);
-                successCount++;
-                console.log(`✅ Successfully completed ${companiesArray[i]} (${successCount}/${companiesArray.length})`);
+                const result = await makeSearchRequest(company, designations, resultCount);
+                return { company, result, success: true };
 
             } catch (error) {
-                console.error(`❌ Error processing company ${companiesArray[i]}:`, error);
-                showNotification(`Failed to process ${companiesArray[i]} after 5 attempts. Check console for details.`, 'error');
-                results.push({ Designations: {} });
+                console.error(`Error processing company ${company}:`, error);
+                showNotification(`Error processing ${company}. Continuing with other companies.`, 'error');
+                return { company, result: { Designations: {} }, success: false };
+            }
+        });
+
+        const allResults = await Promise.all(promises);
+        
+        // Process results
+        allResults.forEach(({ company, result, success }) => {
+            results.push(result);
+            if (success) {
+                successCount++;
+            } else {
                 failureCount++;
             }
-        }
+        });
         
         lastSearchResults = {
             Companies: results.map((result, index) => ({

@@ -30,7 +30,7 @@ const companiesList = document.getElementById('companiesList');
 const noCompaniesText = document.getElementById('noCompanies');
 const searchForm = document.getElementById('searchForm');
 const resultCountInput = document.getElementById('resultCount');
-const exportButtons = document.getElementById('exportButtons');
+
 const suggestionSearch = document.getElementById('suggestionSearch');
 const suggestionsList = document.getElementById('suggestionsList');
 const recentSearch = document.getElementById('recentSearch');

@@ -483,7 +483,157 @@ companyInput.addEventListener('keypress', (e) => {
     }
 });
 
-// Handle form submission
+// Function to prepare data for export
+function prepareExportData(companyName = null) {
+    if (!lastSearchResults) {
+        showNotification('No search results to export', 'error');
+        return null;
+    }
+
+    const data = [];
+    
+    // Add header row
+    data.push(['Company', 'Designation', 'LinkedIn Profile']);
+    
+    // Add data rows
+    if (companyName) {
+        // Export data for specific company
+        const companyResult = lastSearchResults.Companies.find(c => c.CompanyName === companyName);
+        if (companyResult) {
+            Object.entries(companyResult.Designations).forEach(([designation, profiles]) => {
+                profiles.forEach(profile => {
+                    data.push([companyResult.CompanyName, designation, profile]);
+                });
+            });
+        }
+    } else {
+        // Export all data
+        lastSearchResults.Companies.forEach(companyResult => {
+            Object.entries(companyResult.Designations).forEach(([designation, profiles]) => {
+                profiles.forEach(profile => {
+                    data.push([companyResult.CompanyName, designation, profile]);
+                });
+            });
+        });
+    }
+
+    return data;
+}
+
+// Function to export data as CSV
+function exportCSV(companyName = null) {
+    const data = prepareExportData(companyName);
+    if (!data) return;
+
+    const csvContent = data.map(row => row.map(cell => `"${cell}"`).join(',')).join('\n');
+    const blob = new Blob([csvContent], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    link.setAttribute('href', url);
+    link.setAttribute('download', `linkedin_profiles${companyName ? '_' + companyName : ''}.csv`);
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    showNotification(`CSV file exported successfully${companyName ? ' for ' + companyName : ''}`, 'success');
+}
+
+// Function to export data as Excel
+function exportExcel(companyName = null) {
+    const data = prepareExportData(companyName);
+    if (!data) return;
+
+    const ws = XLSX.utils.aoa_to_sheet(data);
+    const wb = XLSX.utils.book_new();
+    XLSX.utils.book_append_sheet(wb, ws, 'LinkedIn Profiles');
+    XLSX.writeFile(wb, `linkedin_profiles${companyName ? '_' + companyName : ''}.xlsx`);
+    showNotification(`Excel file exported successfully${companyName ? ' for ' + companyName : ''}`, 'success');
+}
+
+// Update the display results section to include company-specific export buttons
+function updateResults(results) {
+    const resultsDiv = document.getElementById('results');
+    let resultsHTML = `
+        <div class="animate-fade-in">
+            <h2 class="text-xl font-semibold mb-6 pb-2 border-b">Search Results</h2>
+    `;
+    
+    results.Companies.forEach(companyResult => {
+        resultsHTML += `
+            <div class="mb-8">
+                <div class="flex items-center justify-between mb-4">
+                    <h3 class="text-lg font-semibold text-gray-800">${companyResult.CompanyName}</h3>
+                    <div class="flex items-center space-x-2 opacity-0 transition-opacity duration-200 hover:opacity-100 export-buttons">
+                        <button onclick="exportCSV('${companyResult.CompanyName}')"
+                                class="px-3 py-1 bg-green-500 text-white text-sm rounded hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 flex items-center space-x-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                            <span>CSV</span>
+                        </button>
+                        <button onclick="exportExcel('${companyResult.CompanyName}')"
+                                class="px-3 py-1 bg-blue-500 text-white text-sm rounded hover:bg-blue-600 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 flex items-center space-x-1">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                            </svg>
+                            <span>Excel</span>
+                        </button>
+                    </div>
+                </div>
+        `;
+        
+        Object.entries(companyResult.Designations).forEach(([designation, profiles]) => {
+            resultsHTML += `
+                <div class="mb-6 animate-fade-in">
+                    <div class="flex items-center space-x-2 mb-3">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
+                        </svg>
+                        <h4 class="text-md font-medium text-gray-800">${designation}</h4>
+                        <span class="text-sm text-gray-500">(${profiles.length} profiles found)</span>
+                    </div>
+                    ${profiles.length > 0 
+                        ? `<div class="bg-white rounded-lg shadow-sm border p-4">
+                            <ul class="space-y-2">
+                                ${profiles.map(profile => `
+                                    <li class="hover:bg-gray-50 p-2 rounded transition-colors">
+                                        <a href="${profile}" target="_blank" 
+                                           class="text-blue-600 hover:text-blue-800 flex items-center space-x-2">
+                                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                                                <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
+                                                <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
+                                            </svg>
+                                            <span>${profile}</span>
+                                        </a>
+                                    </li>
+                                `).join('')}
+                            </ul>
+                           </div>`
+                        : '<p class="text-gray-500 italic">No profiles found</p>'
+                    }
+                </div>
+            `;
+        });
+        
+        resultsHTML += '</div>';
+    });
+
+    resultsHTML += '</div>';
+    resultsDiv.innerHTML = resultsHTML;
+
+    // Add CSS for export buttons hover effect
+    const style = document.createElement('style');
+    style.textContent = `
+        .export-buttons {
+            opacity: 0;
+        }
+        .mb-8:hover .export-buttons {
+            opacity: 1;
+        }
+    `;
+    document.head.appendChild(style);
+}
+
+// Update the search form submission to use the new updateResults function
 searchForm.addEventListener('submit', async (e) => {
     e.preventDefault();
     
@@ -518,7 +668,6 @@ searchForm.addEventListener('submit', async (e) => {
     exportButtons.style.display = 'none';
 
     try {
-        // Create an array of promises for each company
         const searchPromises = Array.from(companies).map(company => 
             fetch('/search', {
                 method: 'POST',
@@ -533,10 +682,8 @@ searchForm.addEventListener('submit', async (e) => {
             }).then(response => response.json())
         );
 
-        // Wait for all searches to complete
         const results = await Promise.all(searchPromises);
         
-        // Combine results
         lastSearchResults = {
             Companies: results.map((result, index) => ({
                 CompanyName: Array.from(companies)[index],
@@ -544,56 +691,7 @@ searchForm.addEventListener('submit', async (e) => {
             }))
         };
         
-        // Display results
-        let resultsHTML = `
-            <div class="animate-fade-in">
-                <h2 class="text-xl font-semibold mb-6 pb-2 border-b">Search Results</h2>
-        `;
-        
-        lastSearchResults.Companies.forEach(companyResult => {
-            resultsHTML += `
-                <div class="mb-8">
-                    <h3 class="text-lg font-semibold text-gray-800 mb-4">${companyResult.CompanyName}</h3>
-            `;
-            
-            Object.entries(companyResult.Designations).forEach(([designation, profiles]) => {
-                resultsHTML += `
-                    <div class="mb-6 animate-fade-in">
-                        <div class="flex items-center space-x-2 mb-3">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 9a3 3 0 100-6 3 3 0 000 6zm-7 9a7 7 0 1114 0H3z" clip-rule="evenodd" />
-                            </svg>
-                            <h4 class="text-md font-medium text-gray-800">${designation}</h4>
-                            <span class="text-sm text-gray-500">(${profiles.length} profiles found)</span>
-                        </div>
-                        ${profiles.length > 0 
-                            ? `<div class="bg-white rounded-lg shadow-sm border p-4">
-                                <ul class="space-y-2">
-                                    ${profiles.map(profile => `
-                                        <li class="hover:bg-gray-50 p-2 rounded transition-colors">
-                                            <a href="${profile}" target="_blank" 
-                                               class="text-blue-600 hover:text-blue-800 flex items-center space-x-2">
-                                                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
-                                                    <path d="M11 3a1 1 0 100 2h2.586l-6.293 6.293a1 1 0 101.414 1.414L15 6.414V9a1 1 0 102 0V4a1 1 0 00-1-1h-5z" />
-                                                    <path d="M5 5a2 2 0 00-2 2v8a2 2 0 002 2h8a2 2 0 002-2v-3a1 1 0 10-2 0v3H5V7h3a1 1 0 000-2H5z" />
-                                                </svg>
-                                                <span>${profile}</span>
-                                            </a>
-                                        </li>
-                                    `).join('')}
-                                </ul>
-                               </div>`
-                            : '<p class="text-gray-500 italic">No profiles found</p>'
-                        }
-                    </div>
-                `;
-            });
-            
-            resultsHTML += '</div>';
-        });
-
-        resultsHTML += '</div>';
-        resultsDiv.innerHTML = resultsHTML;
+        updateResults(lastSearchResults);
 
         // Show export buttons if there are results
         if (lastSearchResults.Companies.some(company => 
@@ -617,72 +715,6 @@ searchForm.addEventListener('submit', async (e) => {
         console.error('Error:', error);
     }
 });
-
-// Function to prepare data for export
-function prepareExportData() {
-    if (!lastSearchResults) {
-        showNotification('No search results to export', 'error');
-        return null;
-    }
-
-    const data = [];
-    
-    // Add header row
-    data.push(['Company', 'Designation', 'LinkedIn Profile']);
-    
-    // Add data rows
-    lastSearchResults.Companies.forEach(companyResult => {
-        Object.entries(companyResult.Designations).forEach(([designation, profiles]) => {
-            profiles.forEach(profile => {
-                data.push([companyResult.CompanyName, designation, profile]);
-            });
-        });
-    });
-
-    return data;
-}
-
-// Function to export to CSV
-function exportToCSV() {
-    const data = prepareExportData();
-    if (!data) return;
-
-    let csvContent = "data:text/csv;charset=utf-8,";
-    
-    data.forEach(row => {
-        const csvRow = row.map(cell => {
-            // Escape quotes and wrap in quotes if contains comma or quotes
-            const escaped = cell.replace(/"/g, '""');
-            return /[,"]/.test(cell) ? `"${escaped}"` : cell;
-        }).join(',');
-        csvContent += csvRow + "\r\n";
-    });
-
-    const encodedUri = encodeURI(csvContent);
-    const link = document.createElement("a");
-    link.setAttribute("href", encodedUri);
-    link.setAttribute("download", `linkedin_profiles_${lastSearchResults.CompanyName.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.csv`);
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    showNotification('CSV file exported successfully', 'success');
-}
-
-// Function to export to Excel
-function exportToExcel() {
-    const data = prepareExportData();
-    if (!data) return;
-
-    const ws = XLSX.utils.aoa_to_sheet(data);
-    const wb = XLSX.utils.book_new();
-    XLSX.utils.book_append_sheet(wb, ws, "LinkedIn Profiles");
-
-    // Generate and download the Excel file
-    XLSX.writeFile(wb, `linkedin_profiles_${lastSearchResults.CompanyName.toLowerCase().replace(/\s+/g, '_')}_${new Date().toISOString().split('T')[0]}.xlsx`);
-    
-    showNotification('Excel file exported successfully', 'success');
-}
 
 // Function to clear all recent designations
 function clearAllRecent() {

@@ -23,98 +23,158 @@
         .designation-item:hover {
             transform: translateX(5px);
         }
+        .suggestions-panel {
+            height: calc(100vh - 2rem);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #CBD5E0 #EDF2F7;
+        }
+        .suggestions-panel::-webkit-scrollbar {
+            width: 6px;
+        }
+        .suggestions-panel::-webkit-scrollbar-track {
+            background: #EDF2F7;
+        }
+        .suggestions-panel::-webkit-scrollbar-thumb {
+            background-color: #CBD5E0;
+            border-radius: 3px;
+        }
+        .suggestions-list {
+            max-height: calc(100vh - 12rem);
+            overflow-y: auto;
+            scrollbar-width: thin;
+            scrollbar-color: #CBD5E0 #EDF2F7;
+        }
+        .suggestions-list::-webkit-scrollbar {
+            width: 6px;
+        }
+        .suggestions-list::-webkit-scrollbar-track {
+            background: #EDF2F7;
+        }
+        .suggestions-list::-webkit-scrollbar-thumb {
+            background-color: #CBD5E0;
+            border-radius: 3px;
+        }
     </style>
 </head>
-<body class="bg-gradient-to-br from-blue-50 to-indigo-50 min-h-screen p-8">
-    <div class="max-w-3xl mx-auto">
-        <div class="bg-white rounded-2xl shadow-xl p-8 backdrop-blur-lg bg-opacity-95">
-            <div class="text-center mb-8">
-                <h1 class="text-3xl font-bold text-gray-800 mb-2">LinkedIn Profile Finder</h1>
-                <p class="text-gray-600">Find professional profiles based on designation and company</p>
-            </div>
-            
-            <form id="searchForm" class="space-y-6">
-                <!-- Company Input -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-semibold text-gray-700">Company Name</label>
-                    <div class="relative">
-                        <input type="text" 
-                               id="companyInput" 
-                               class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm" 
-                               placeholder="Enter company name" 
-                               required>
-                    </div>
-                </div>
-
-                <!-- Results Count Input -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-semibold text-gray-700">Number of Results per Designation</label>
-                    <div class="flex items-center space-x-3">
-                        <input type="number" 
-                               id="resultCount" 
-                               class="w-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm" 
-                               value="10" 
-                               min="1" 
-                               max="100" 
-                               required>
-                        <span class="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">(1-100)</span>
-                    </div>
+<body class="bg-gradient-to-br from-blue-50 to-indigo-50 min-h-screen p-4">
+    <div class="flex space-x-6">
+        <!-- Main Content -->
+        <div class="flex-1 max-w-3xl">
+            <div class="bg-white rounded-2xl shadow-xl p-8 backdrop-blur-lg bg-opacity-95">
+                <div class="text-center mb-8">
+                    <h1 class="text-3xl font-bold text-gray-800 mb-2">LinkedIn Profile Finder</h1>
+                    <p class="text-gray-600">Find professional profiles based on designation and company</p>
                 </div>
                 
-                <!-- Designations Input -->
-                <div class="space-y-2">
-                    <label class="block text-sm font-semibold text-gray-700">Designations</label>
-                    <div class="flex space-x-2">
-                        <input type="text" 
-                               id="designationInput" 
-                               class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm" 
-                               placeholder="Enter designation (e.g., CEO, Software Engineer)">
-                        <button type="button" 
-                                id="addDesignation" 
-                                class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 flex items-center space-x-2 shadow-sm">
-                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                                <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
-                            </svg>
-                            <span>Add</span>
-                        </button>
+                <form id="searchForm" class="space-y-6">
+                    <!-- Company Input -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-700">Company Name</label>
+                        <div class="relative">
+                            <input type="text" 
+                                   id="companyInput" 
+                                   class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm" 
+                                   placeholder="Enter company name" 
+                                   required>
+                        </div>
                     </div>
-                    <div id="designationsList" class="mt-4 space-y-2">
-                        <!-- Designations will be added here -->
+
+                    <!-- Results Count Input -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-700">Number of Results per Designation</label>
+                        <div class="flex items-center space-x-3">
+                            <input type="number" 
+                                   id="resultCount" 
+                                   class="w-32 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm" 
+                                   value="10" 
+                                   min="1" 
+                                   max="100" 
+                                   required>
+                            <span class="text-sm text-gray-500 bg-gray-100 px-3 py-1 rounded-full">(1-100)</span>
+                        </div>
                     </div>
-                    <p class="text-sm text-gray-500 mt-2 italic" id="noDesignations">No designations added yet</p>
+                    
+                    <!-- Designations Input -->
+                    <div class="space-y-2">
+                        <label class="block text-sm font-semibold text-gray-700">Designations</label>
+                        <div class="flex space-x-2">
+                            <input type="text" 
+                                   id="designationInput" 
+                                   class="flex-1 p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm" 
+                                   placeholder="Enter designation (e.g., CEO, Software Engineer)">
+                            <button type="button" 
+                                    id="addDesignation" 
+                                    class="px-6 py-3 bg-green-500 text-white rounded-lg hover:bg-green-600 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 flex items-center space-x-2 shadow-sm">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-11a1 1 0 10-2 0v2H7a1 1 0 100 2h2v2a1 1 0 102 0v-2h2a1 1 0 100-2h-2V7z" clip-rule="evenodd" />
+                                </svg>
+                                <span>Add</span>
+                            </button>
+                        </div>
+                        <div id="designationsList" class="mt-4 space-y-2">
+                            <!-- Designations will be added here -->
+                        </div>
+                        <p class="text-sm text-gray-500 mt-2 italic" id="noDesignations">No designations added yet</p>
+                    </div>
+
+                    <!-- Search Button -->
+                    <button type="submit" 
+                            class="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm flex items-center justify-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                        </svg>
+                        <span>Search Profiles</span>
+                    </button>
+                </form>
+
+                <!-- Results Section -->
+                <div id="results" class="mt-8">
+                    <!-- Results will be displayed here -->
                 </div>
 
-                <!-- Search Button -->
-                <button type="submit" 
-                        class="w-full py-3 px-4 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm flex items-center justify-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
-                    </svg>
-                    <span>Search Profiles</span>
-                </button>
-            </form>
-
-            <!-- Results Section -->
-            <div id="results" class="mt-8">
-                <!-- Results will be displayed here -->
+                <!-- Export Buttons -->
+                <div id="exportButtons" class="mt-6 flex space-x-4 justify-end" style="display: none;">
+                    <button onclick="exportToCSV()" 
+                            class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 shadow-sm flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                        <span>Export CSV</span>
+                    </button>
+                    <button onclick="exportToExcel()" 
+                            class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                        <span>Export Excel</span>
+                    </button>
+                </div>
             </div>
+        </div>
 
-            <!-- Export Buttons -->
-            <div id="exportButtons" class="mt-6 flex space-x-4 justify-end" style="display: none;">
-                <button onclick="exportToCSV()" 
-                        class="px-4 py-2 bg-green-600 text-white rounded-lg hover:bg-green-700 focus:ring-2 focus:ring-green-500 focus:ring-offset-2 transition-all duration-200 shadow-sm flex items-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
-                    <span>Export CSV</span>
-                </button>
-                <button onclick="exportToExcel()" 
-                        class="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 shadow-sm flex items-center space-x-2">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
-                        <path fill-rule="evenodd" d="M3 17a1 1 0 011-1h12a1 1 0 110 2H4a1 1 0 01-1-1zm3.293-7.707a1 1 0 011.414 0L9 10.586V3a1 1 0 112 0v7.586l1.293-1.293a1 1 0 111.414 1.414l-3 3a1 1 0 01-1.414 0l-3-3a1 1 0 010-1.414z" clip-rule="evenodd" />
-                    </svg>
-                    <span>Export Excel</span>
-                </button>
+        <!-- Right Side Suggestions Panel -->
+        <div class="w-80">
+            <div class="bg-white rounded-2xl shadow-xl p-6 backdrop-blur-lg bg-opacity-95 suggestions-panel">
+                <div class="sticky top-0 bg-white pb-4 z-10">
+                    <h2 class="text-xl font-semibold mb-4">Popular Designations</h2>
+                    <div class="relative">
+                        <input type="text" 
+                               id="suggestionSearch" 
+                               class="w-full p-3 pr-10 border border-gray-300 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500 transition-all duration-200 bg-white shadow-sm" 
+                               placeholder="Search designations...">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 absolute right-3 top-3.5 text-gray-400" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M8 4a4 4 0 100 8 4 4 0 000-8zM2 8a6 6 0 1110.89 3.476l4.817 4.817a1 1 0 01-1.414 1.414l-4.816-4.816A6 6 0 012 8z" clip-rule="evenodd" />
+                        </svg>
+                    </div>
+                </div>
+                <div id="suggestionsList" class="suggestions-list space-y-2">
+                    <!-- Suggestions will be loaded here -->
+                    <div class="text-center text-gray-500 py-4">
+                        <div class="animate-spin inline-block w-6 h-6 border-2 border-gray-300 border-t-blue-600 rounded-full"></div>
+                        <p class="mt-2">Loading suggestions...</p>
+                    </div>
+                </div>
             </div>
         </div>
     </div>

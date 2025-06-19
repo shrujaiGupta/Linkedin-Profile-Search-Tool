@@ -2,6 +2,31 @@
 let designations = new Set();
 let lastSearchResults = null;
 
+// Popular designations list
+const popularDesignations = [
+    "CEO", "CTO", "CFO", "COO", "CMO",
+    "Software Engineer", "Senior Software Engineer", "Lead Software Engineer", "Principal Software Engineer", "Software Architect",
+    "Product Manager", "Senior Product Manager", "Product Owner", "Product Director", "VP of Product",
+    "Data Scientist", "Senior Data Scientist", "Lead Data Scientist", "Data Engineer", "Machine Learning Engineer",
+    "UX Designer", "UI Designer", "Product Designer", "Senior Designer", "Design Director",
+    "Marketing Manager", "Digital Marketing Manager", "Marketing Director", "Growth Manager", "Brand Manager",
+    "Sales Manager", "Account Executive", "Sales Director", "Business Development Manager", "Sales Representative",
+    "HR Manager", "HR Director", "Talent Acquisition Manager", "HR Business Partner", "Recruiting Manager",
+    "Operations Manager", "Operations Director", "Project Manager", "Program Manager", "Scrum Master",
+    "Financial Analyst", "Senior Financial Analyst", "Finance Manager", "Finance Director", "Controller",
+    "Business Analyst", "Senior Business Analyst", "Business Intelligence Analyst", "Data Analyst", "Research Analyst",
+    "DevOps Engineer", "Site Reliability Engineer", "Systems Engineer", "Cloud Engineer", "Infrastructure Engineer",
+    "Full Stack Developer", "Frontend Developer", "Backend Developer", "Mobile Developer", "iOS Developer",
+    "Android Developer", "React Developer", "Angular Developer", "Node.js Developer", "Python Developer",
+    "Quality Assurance Engineer", "QA Lead", "Test Engineer", "Automation Engineer", "Performance Engineer",
+    "Security Engineer", "Information Security Manager", "Security Analyst", "Cybersecurity Engineer", "Security Architect",
+    "Content Manager", "Content Strategist", "Content Writer", "Technical Writer", "Copywriter",
+    "Customer Success Manager", "Account Manager", "Client Services Manager", "Customer Support Manager", "Customer Experience Manager",
+    "Supply Chain Manager", "Procurement Manager", "Logistics Manager", "Inventory Manager", "Supply Chain Director",
+    "Legal Counsel", "Corporate Counsel", "Patent Attorney", "Compliance Officer", "Legal Director",
+    "Research Scientist", "Research Engineer", "R&D Manager", "Innovation Manager", "Research Director"
+];
+
 // Get DOM elements
 const designationInput = document.getElementById('designationInput');
 const addDesignationBtn = document.getElementById('addDesignation');
@@ -10,6 +35,134 @@ const noDesignationsText = document.getElementById('noDesignations');
 const searchForm = document.getElementById('searchForm');
 const resultCountInput = document.getElementById('resultCount');
 const exportButtons = document.getElementById('exportButtons');
+const suggestionSearch = document.getElementById('suggestionSearch');
+const suggestionsList = document.getElementById('suggestionsList');
+
+// Initialize suggestions
+let currentSuggestions = [...popularDesignations];
+let currentPage = 0;
+const itemsPerPage = 9;
+
+// Function to filter suggestions based on search
+function filterSuggestions(searchText) {
+    if (!searchText) {
+        currentSuggestions = [...popularDesignations];
+    } else {
+        const searchLower = searchText.toLowerCase();
+        currentSuggestions = popularDesignations.filter(designation => 
+            designation.toLowerCase().includes(searchLower)
+        );
+    }
+    currentPage = 0;
+    displaySuggestions();
+}
+
+// Function to display suggestions
+function displaySuggestions() {
+    const start = currentPage * itemsPerPage;
+    const end = start + itemsPerPage;
+    const pageItems = currentSuggestions.slice(start, end);
+    
+    let html = '';
+    
+    if (pageItems.length === 0) {
+        html = `
+            <div class="text-center text-gray-500 py-4">
+                <p>No matching designations found</p>
+            </div>
+        `;
+    } else {
+        pageItems.forEach(designation => {
+            const isSelected = designations.has(designation);
+            html += `
+                <div class="designation-suggestion p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-all duration-200 cursor-pointer ${isSelected ? 'border-2 border-blue-500' : ''}"
+                     onclick="toggleSuggestion('${designation.replace(/'/g, "\\'")}')">
+                    <div class="flex items-center justify-between">
+                        <span class="text-gray-700">${designation}</span>
+                        ${isSelected ? `
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500" viewBox="0 0 20 20" fill="currentColor">
+                                <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                            </svg>
+                        ` : ''}
+                    </div>
+                </div>
+            `;
+        });
+
+        // Add navigation controls
+        html += `
+            <div class="flex justify-between items-center py-4">
+                ${currentPage > 0 ? `
+                    <button onclick="previousPage()" 
+                            class="text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4 transform rotate-180" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                        <span>Previous</span>
+                    </button>
+                ` : `<div></div>`}
+                
+                ${end < currentSuggestions.length ? `
+                    <button onclick="loadMore()" 
+                            class="text-blue-600 hover:text-blue-800 font-medium flex items-center space-x-2">
+                        <span>Next</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                ` : `<div></div>`}
+            </div>
+            <div class="text-center text-sm text-gray-500">
+                Showing ${start + 1}-${end} of ${currentSuggestions.length}
+            </div>
+        `;
+    }
+
+    suggestionsList.innerHTML = html;
+}
+
+// Function to load more suggestions
+function loadMore() {
+    if ((currentPage + 1) * itemsPerPage < currentSuggestions.length) {
+        currentPage++;
+        displaySuggestions();
+        // Scroll to top of suggestions list
+        suggestionsList.scrollTop = 0;
+    }
+}
+
+// Function to go to previous page
+function previousPage() {
+    if (currentPage > 0) {
+        currentPage--;
+        displaySuggestions();
+        // Scroll to top of suggestions list
+        suggestionsList.scrollTop = 0;
+    }
+}
+
+// Function to toggle suggestion selection
+function toggleSuggestion(designation) {
+    if (designations.has(designation)) {
+        removeDesignation(designation);
+    } else {
+        addDesignation(designation);
+    }
+    displaySuggestions(); // Refresh the suggestions list to update selection status
+}
+
+// Initialize suggestions display
+displaySuggestions();
+
+// Add search event listener
+suggestionSearch.addEventListener('input', (e) => {
+    filterSuggestions(e.target.value);
+});
+
+// Make toggleSuggestion available globally
+window.toggleSuggestion = toggleSuggestion;
+window.loadMore = loadMore;
+window.previousPage = previousPage;
 
 // Validate result count input
 resultCountInput.addEventListener('change', () => {
